@@ -3,6 +3,7 @@ import string
 import time
 import sys
 import subprocess
+import matplotlib.pyplot as plt
 
 # The C-optimized library is distributed as 'pyahocorasick' on PyPI but imported as 'ahocorasick'.
 # Handle missing package, auto-installation, and IDE linter resolution (# type: ignore).
@@ -320,6 +321,88 @@ def run_benchmark(signatures=None, iterations=5):
     print(f"Signatures Detected (Aho-Corasick)   : {dfa_matches}")
     print(f"Speedup Ratio                        : {speedup_ratio:.2f}x")
     print("=" * 60)
+
+    # =====================================================================
+    # 6. Generate Performance Comparison Chart
+    # =====================================================================
+    generate_chart(avg_native_time, avg_dfa_time)
+
+# =====================================================================
+# 6. Performance Visualization Function
+# =====================================================================
+
+def generate_chart(native_time, dfa_time):
+    """
+    Generate and save a publication-quality bar chart comparing execution times.
+
+    Parameters:
+        native_time (float/int): Average execution time of Native Multi-Pass String Matching.
+        dfa_time (float/int): Average execution time of C-Optimized Aho-Corasick DFA Matching.
+    """
+    # Error handling for invalid types and negative execution times
+    if not isinstance(native_time, (int, float)) or not isinstance(dfa_time, (int, float)):
+        raise TypeError(
+            f"Execution times must be numeric (int or float). "
+            f"Received native_time={type(native_time).__name__}, dfa_time={type(dfa_time).__name__}."
+        )
+    if native_time < 0 or dfa_time < 0:
+        raise ValueError(
+            f"Execution times cannot be negative. "
+            f"Received native_time={native_time}, dfa_time={dfa_time}."
+        )
+
+    # 2. Prepare Chart Data
+    algorithms = ["Native Multi-Pass (Script A)", "C-Optimized DFA (Script B)"]
+    execution_times = [native_time, dfa_time]
+    colors = ["#d9534f", "#5bc0de"]  # Red for Native Multi-Pass, Blue for C-Optimized DFA
+
+    # 3. Configure the Figure
+    plt.figure(figsize=(6, 4))
+    bars = plt.bar(
+        algorithms,
+        execution_times,
+        color=colors,
+        width=0.5,
+        edgecolor="#333333",
+        linewidth=1.0
+    )
+
+    # 4. Add Chart Labels and Title
+    plt.ylabel("Execution Time (Seconds)", fontsize=10)
+    plt.title(
+        "Performance Comparison: Native Search vs. Aho-Corasick DFA (50MB Payload, 5,100 Signatures)",
+        fontsize=11,
+        fontweight="bold",
+        pad=12
+    )
+
+    # Visual refinement: subtle horizontal grid lines and headroom for data labels
+    plt.grid(axis="y", linestyle="--", alpha=0.6)
+    plt.gca().set_axisbelow(True)
+    max_height = max(execution_times)
+    plt.ylim(0, max_height * 1.15 if max_height > 0 else 1.0)
+
+    # 5. Display Execution Times
+    for bar in bars:
+        height = bar.get_height()
+        plt.text(
+            bar.get_x() + bar.get_width() / 2.0,
+            height + (max_height * 0.02 if max_height > 0 else 0.02),
+            f"{height:.2f}s",
+            ha="center",
+            va="bottom",
+            fontsize=10,
+            fontweight="bold"
+        )
+
+    # 6. Save the Chart
+    plt.tight_layout()
+    chart_filename = "performance_comparison_chart.png"
+    plt.savefig(chart_filename, dpi=300)
+    print(f"Success: Chart saved successfully as '{chart_filename}'.")
+
+    # 7. Display the Chart
+    plt.show()
 
 if __name__ == "__main__":
     run_benchmark()
